@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panic Button Script</title>
+    <script>
+        document.addEventListener('keydown', function(event) {
+            // 1. Listen for the tilde (~) or backtick (`) key
+            if (event.key === '~' || event.key === '`') {
+                event.preventDefault();
+
+                // 2. Open the about:blank tab synchronously
+                const newTab = window.open();
+
+                if (newTab) {
+                    // IMPORTANT: Replace this with your actual jsdelivr URL
+                    const cdnUrl = 'https://cdn.jsdelivr.net/gh/effip/data-games@main/dist/index.html';
+
+                    // 3. Fetch the raw HTML inside the original tab
+                    fetch(cdnUrl)
+                        .then(response => {
+                            if (!response.ok) throw new Error('Network response was not ok');
+                            return response.text();
+                        })
+                        .then(htmlContent => {
+                            // 4. Escape quotes & ampersands so the HTML safely fits inside the srcdoc attribute
+                            const escapedHtml = htmlContent
+                                .replace(/&/g, '&amp;')
+                                .replace(/"/g, '&quot;');
+
+                            // 5. Construct the full layout string for the new tab
+                            const newTabLayout = `
+                                <!DOCTYPE html>
+                                <html>
+                                <head>
+                                    <title>Page</title>
+                                    <style>
+                                        body { margin: 0; padding: 0; overflow: hidden; background: #fff; }
+                                        iframe { width: 100vw; height: 100vh; border: none; margin: 0; padding: 0; display: block; }
+                                    </style>
+                                </head>
+                                <body>
+                                    <iframe srcdoc="${escapedHtml}"></iframe>
+                                </body>
+                                </html>
+                            `;
+
+                            // 6. Write it to the new tab.
+                            // This makes the new tab the "owner/initiator" of the srcdoc, bypassing the #blocked error!
+                            newTab.document.open();
+                            newTab.document.write(newTabLayout);
+                            newTab.document.close();
+
+                            // 7. Instantly redirect the original tab to Google
+                            window.location.replace('https://www.google.com');
+                        })
+                        .catch(err => {
+                            console.error('Fetch error:', err);
+                            // If network completely fails, just redirect immediately
+                            window.location.replace('https://www.google.com');
+                        });
+                } else {
+                    alert('Please allow popups to use this feature.');
+                }
+            }
+        });
+    </script>
+</head>
+<body>
+<h1>Test Page</h1>
+<p>Press the <strong>~</strong> (tilde) key to activate the script.</p>
+</body>
+</html>
